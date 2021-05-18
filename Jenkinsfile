@@ -1,35 +1,21 @@
-pipeline {
-    agent any
+node{
     def app
-    stages {
-        stage ('Checkout from Git') {
-            steps {
-                checkout scm     
-            }
+    stage ('Clone Git') {
+        checkout scm
+    }
+
+    stage ('Build Image') {
+        app = docker.build("nelrajan/test")
+    }
+
+    stage ('Test image') {
+        app.inside {
+            sh 'echo "Tests passed"'
         }
-        
-        stage ('Build image') {
-            steps {
-                app = docker.build("nelrajan/test")
-            }
-        }
-        
-        stage ('Test image') {
-            steps {
-                app.inside {
-                   sh 'echo "Test passed"'
-                }           
-            }
-        }
-        
-        stage ('Push image') {
-            steps {
-                docker.withRegistry('https://registry.hub.docker.com', 'dockerhub') {
-                    
-                    app.push("${env.BUILD_NUMBER}")
-                }
-            }
-                
-        }
+    }
+
+    stage ('Push Image') {
+        docker.withRegistry('https://registry.hub.docker.com', 'dockerhub') {            
+        app.push("${env.BUILD_NUMBER}")
     }
 }
